@@ -1,11 +1,21 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 function ExpenseItem({ item }) {
+  const navigation = useNavigation();
+
+  function ExpensePressHandler() {
+    navigation.navigate("ManageExpenses", { expenseId: item.id });
+  }
+
   return (
-    <Pressable>
-      <View style={styles.itemContainer}>
+    <Pressable
+      onPress={ExpensePressHandler}
+      android_ripple={{ color: "#DDDDDD", borderless: false }}
+      style={({ pressed }) => [styles.itemContainer, pressed && styles.pressed]}
+    >
+      <View style={styles.textContainer}>
         <Text style={styles.description}>{item.description}</Text>
-        <Text style={styles.amount}>${item.amount.toFixed(2)}</Text>
         <Text style={styles.date}>
           {item.date.toLocaleDateString("en-US", {
             year: "numeric",
@@ -13,6 +23,9 @@ function ExpenseItem({ item }) {
             day: "numeric",
           })}
         </Text>
+      </View>
+      <View>
+        <Text style={styles.amount}>${item.amount.toFixed(2)}</Text>
       </View>
     </Pressable>
   );
@@ -30,8 +43,8 @@ const ExpensesList = ({ expenses }) => {
   return (
     <FlatList
       data={expenses}
-      renderItem={ExpenseItem}
-      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => <ExpenseItem item={item} />}
+      keyExtractor={(item) => item.id.toString()}
       contentContainerStyle={styles.listContainer}
     />
   );
@@ -42,33 +55,43 @@ export default ExpensesList;
 const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
-    backgroundColor: "#F4F4F9",
+    backgroundColor: "#F8F8FB",
   },
   itemContainer: {
-    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: 16,
     marginVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 5,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  textContainer: {
+    flex: 1,
+    marginRight: 12,
   },
   description: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#333",
   },
   amount: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "bold",
     color: "#4CAF50",
-    marginTop: 4,
   },
   date: {
     fontSize: 14,
-    color: "#888",
-    marginTop: 2,
+    color: "#A0A0A0",
+    marginTop: 4,
   },
   noDataContainer: {
     flex: 1,
@@ -76,7 +99,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noDataText: {
-    fontSize: 18,
-    color: "#777",
+    fontSize: 20,
+    fontWeight: "500",
+    color: "#666",
   },
 });
