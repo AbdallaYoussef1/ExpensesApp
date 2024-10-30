@@ -30,14 +30,7 @@ const CustomButton = ({
       {isLoading ? (
         <ActivityIndicator color={mode === "primary" ? "#fff" : "#4CAF50"} />
       ) : (
-        <Text
-          style={[
-            styles.text,
-            mode === "primary" ? styles.primaryText : styles.secondaryText,
-          ]}
-        >
-          {children}
-        </Text>
+        <Text style={[styles.text, styles.primaryText]}>{children}</Text>
       )}
     </Pressable>
   );
@@ -60,8 +53,6 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: "#fff",
-    borderColor: "#4CAF50",
-    borderWidth: 2,
   },
   pressed: {
     opacity: 0.75,
@@ -75,8 +66,5 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: "#fff",
-  },
-  secondaryText: {
-    color: "#4CAF50",
   },
 });
