@@ -1,26 +1,53 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import ExpensesList from "../Components/ExpensesOutput/ExpensesList";
 import { ExpensesContext } from "../store/Expenses-Context";
-
-// Utility function to get a date X days before the given date
-function getDateMinus7days(date, days) {
-  const newDate = new Date(date);
-  newDate.setDate(newDate.getDate() - days); // Adjust date directly
-  return newDate;
-}
+import { GetExpense } from "../Utility/Http";
+import { getDateMinusDays } from "../Utility/date";
+import LoadingOverlay from "../Components/UI/LoadingOverlay";
+import ErrorOverlay from "../Components/UI/ErrorOverlay";
 
 function RecentExpenses() {
-  const { expenses } = useContext(ExpensesContext); // Extract expenses from context
+  const expensesCtx = useContext(ExpensesContext); // Extract expenses from context
+  const [isFetching, setIsFetching] = useState(true);
+  const [Error, setError] = useState();
 
-  const recentExpenses = expenses.filter((expense) => {
+  useEffect(() => {
+    async function FetchExpenses() {
+      setIsFetching(true);
+      try {
+        const Expenses = await GetExpense();
+        expensesCtx.setExpenses(Expenses);
+      } catch (error) {
+        setError("Something gone wrong!!!!")
+      }
+      setIsFetching(false);
+    }
+
+    FetchExpenses();
+  }, []);
+
+  function ErrorButtonHandler(){
+    setError(null)
+  }
+
+  
+
+  const recentExpenses = expensesCtx.expenses.filter((expense) => {
     const today = new Date();
-    const date7DaysAgo = getDateMinus7days(today, 7);
+    const date7DaysAgo = getDateMinusDays(today, 7);
 
     // Convert expense date if it's not already a Date object
     const expenseDate = new Date(expense.date);
 
     return expenseDate >= date7DaysAgo && expenseDate <= today;
   });
+
+  if(Error && !isFetching){
+    return <ErrorOverlay message={Error} onConfirm={ErrorButtonHandler} />
+  }
+  if (isFetching) {
+    return <LoadingOverlay />;
+  }
 
   return <ExpensesList expenses={recentExpenses} />;
 }

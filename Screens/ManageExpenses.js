@@ -1,10 +1,15 @@
-import { useContext, useLayoutEffect } from "react";
+import { useContext, useLayoutEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import IconButton from "../Components/UI/IconButton";
 import { ExpensesContext } from "../store/Expenses-Context";
 import ExpenseForm from "../Components/ManageExpense/ExpenseForm";
+import { PostExpense, UpdateExpense, DeleteExpense } from "../Utility/Http";
+import LoadingOverlay from "../Components/UI/LoadingOverlay";
+import ErrorOverlay from "../Components/UI/ErrorOverlay";
 
 const ManageExpenses = ({ route, navigation }) => {
+  const [isFetching, setIsFetching] = useState(false);
+  const [Error, setError] = useState();
   const ExpensesCtx = useContext(ExpensesContext);
   const EditedExpenseId = route.params?.expenseId;
   const isEditing = !!EditedExpenseId;
@@ -23,47 +28,74 @@ const ManageExpenses = ({ route, navigation }) => {
     navigation.goBack();
   }
 
-  function DeleteExpenseHandler() {
-    ExpensesCtx.deleteExpense(EditedExpenseId);
-    ClosingModalHandler();
+  async function DeleteExpenseHandler() {
+    setIsFetching(true);
+    try {
+      ExpensesCtx.deleteExpense(EditedExpenseId);
+      await DeleteExpense(EditedExpenseId);
+      ClosingModalHandler();
+    } catch (error) {
+      setError("could't delete this item please try again later");
+      setIsFetching(false);
+    }
   }
 
-  function ConfirmExpenseHandler(ExpenseData) {
-    if (isEditing) {
-      ExpensesCtx.updateExpense(EditedExpenseId, ExpenseData);
-    } else {
-      ExpensesCtx.addExpense(ExpenseData);
+  async function ConfirmExpenseHandler(ExpenseData) {
+    setIsFetching(true);
+
+    try {
+      if (isEditing) {
+        ExpensesCtx.updateExpense(EditedExpenseId, ExpenseData);
+        await UpdateExpense(EditedExpenseId, ExpenseData);
+      } else {
+        const id = await PostExpense(ExpenseData);
+        ExpensesCtx.addExpense({ ...ExpenseData, id: id });
+        setIsFetching(true);
+      }
+      ClosingModalHandler();
+    } catch (error) {
+      setError("could't add or update the Expense please try again later");
+      setIsFetching(false);
     }
-    ClosingModalHandler();
   }
 
   function CancelHandler() {
     ClosingModalHandler();
   }
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <ExpenseForm
-          onCancel={CancelHandler}
-          isEditing={isEditing}
-          onSubmit={ConfirmExpenseHandler}
-          DefaultValues={defaultValues}
-        />
-      </View>
+  function ErrorButtonHandler() {
+    setError(null);
+  }
+  if (Error && !isFetching) {
+    <ErrorOverlay message={Error} onConfirm={ErrorButtonHandler} />;
+  }
 
-      {isEditing && (
-        <View style={styles.deleteContainer}>
-          <IconButton
-            name="trash"
-            size={36}
-            color="#d9534f"
-            onPress={DeleteExpenseHandler}
+  if (isFetching) {
+    return <LoadingOverlay />;
+  } else {
+    return (
+      <View style={styles.container}>
+        <View style={styles.formContainer}>
+          <ExpenseForm
+            onCancel={CancelHandler}
+            isEditing={isEditing}
+            onSubmit={ConfirmExpenseHandler}
+            DefaultValues={defaultValues}
           />
         </View>
-      )}
-    </View>
-  );
+        {isEditing && (
+          <View style={styles.deleteContainer}>
+            <IconButton
+              name="trash"
+              size={36}
+              color="#d9534f"
+              onPress={DeleteExpenseHandler}
+            />
+          </View>
+        )}
+      </View>
+    );
+  }
 };
 
 export default ManageExpenses;

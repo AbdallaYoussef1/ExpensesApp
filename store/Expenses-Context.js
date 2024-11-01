@@ -1,10 +1,9 @@
 import { createContext, useReducer } from "react";
-import { DUMMY_EXPENSES } from "../Data/DummyData";
-
 
 export const ExpensesContext = createContext({
   expenses: [],
   addExpense: ({ description, amount, date }) => {},
+  setExpenses: (expenses) => {},
   deleteExpense: (id) => {},
   updateExpense: (id, { description, amount, date }) => {},
 });
@@ -12,9 +11,10 @@ export const ExpensesContext = createContext({
 function ExpenseReducer(state, action) {
   switch (action.type) {
     case "Add":
-      const id = new Date().toString() + Math.random().toString();
-      return [{ ...action.payload, id: id }, ...state];
-
+      return [action.payload, ...state];
+    case "Set":
+      const inverted = action.payload.reverse();
+      return inverted;
     case "Update":
       const updatableIndex = state.findIndex(
         (expense) => expense.id === action.payload.id
@@ -40,17 +40,20 @@ function ExpenseReducer(state, action) {
 }
 
 function ExpensesContextProvider({ children }) {
-  const [expensesState, dispatch] = useReducer(ExpenseReducer, DUMMY_EXPENSES);
+  const [expensesState, dispatch] = useReducer(ExpenseReducer, []);
 
   function addExpense(expenseData) {
     dispatch({ type: "Add", payload: expenseData });
+  }
+  function setExpenses(expenses) {
+    dispatch({ type: "Set", payload: expenses });
   }
   function deleteExpense(id) {
     console.log("Attempting to delete expense with id:", id);
     dispatch({ type: "Delete", payload: id });
   }
   function updateExpense(id, expenseData) {
-    dispatch({ type: "Update", payload: { id, data: expenseData }});
+    dispatch({ type: "Update", payload: { id, data: expenseData } });
   }
 
   return (
@@ -58,6 +61,7 @@ function ExpensesContextProvider({ children }) {
       value={{
         expenses: expensesState,
         addExpense,
+        setExpenses,
         deleteExpense,
         updateExpense,
       }}
